@@ -1,0 +1,9 @@
+{
+  "name": "wallzone-api",
+  "version": "1.0.0",
+  "description": "WallZone backend API – proxies Wallhaven.cc",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  }
+}
