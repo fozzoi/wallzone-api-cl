@@ -1,3 +1,4 @@
+// api/wallpapers.js
 /**
  * WallZone – Vercel Serverless API
  * Proxies Wallhaven.cc so your API key stays server-side.
@@ -35,13 +36,15 @@ const CATEGORIES = [
 
 // ─── Transform Wallhaven item → app item ─────────────────────────────────────
 function mapWallhavenItem(w) {
-  // Use large thumb for grid (fast), full path for detail view
   const aspectRatio = w.dimension_y / Math.max(w.dimension_x, 1);
   const cardHeight = Math.min(Math.max(Math.floor(aspectRatio * 180), 200), 380);
 
   return {
     id: w.id,
-    url: w.thumbs.large,           // grid thumbnail (~300px wide)
+    // FIX: Replaced w.thumbs.large with w.thumbs.original
+    // This provides a high-quality preview that maintains the aspect ratio, 
+    // eliminating the zoomed-in/blurry look without freezing the app with 4k files.
+    url: w.thumbs.original,        
     fullUrl: w.path,               // full resolution for detail/download
     previewUrl: w.thumbs.original, // medium preview
     title: w.tags?.length > 0
