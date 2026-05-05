@@ -8,23 +8,23 @@ const WALLHAVEN_BASE = 'https://wallhaven.cc/api/v1';
 const API_KEY = process.env.WALLHAVEN_API_KEY || ''; // set in Vercel dashboard
 
 // ─── Category map ────────────────────────────────────────────────────────────
-// FIX: Simplified the queries (q) so they return thousands of paginatable results
 const CATEGORIES = [
-  { id: 'anime',      label: 'Anime',       q: 'anime',            wh: '010' },
-  { id: 'cyberpunk',  label: 'Cyberpunk',   q: 'cyberpunk neon',   wh: '110' },
-  { id: 'space',      label: 'Space',       q: 'space',            wh: '100' },
-  { id: 'nature',     label: 'Nature',      q: 'nature',           wh: '100' },
-  { id: 'ocean',      label: 'Ocean',       q: 'ocean',            wh: '100' },
-  { id: 'amoled',     label: 'AMOLED Dark', q: 'amoled',           wh: '100' },
-  { id: 'abstract',   label: 'Abstract',    q: 'abstract',         wh: '100' },
-  { id: 'geometric',  label: 'Geometric',   q: 'geometric',        wh: '100' },
-  { id: 'lofi',       label: 'Lo-Fi',       q: 'lofi',             wh: '110' },
-  { id: 'aurora',     label: 'Aurora',      q: 'aurora',           wh: '100' },
-  { id: 'retrowave',  label: 'Retrowave',   q: 'retrowave',        wh: '100' },
-  { id: 'sakura',     label: 'Sakura',      q: 'sakura',           wh: '110' },
-  { id: 'neon',       label: 'Neon',        q: 'neon',             wh: '100' },
-  { id: 'minimal',    label: 'Minimal',     q: 'minimalism',       wh: '100' },
-  { id: 'galaxy',     label: 'Galaxy',      q: 'galaxy',           wh: '100' },
+  // FIX: Added 'scenery' and '-girl' to filter out the character bloat
+  { id: 'anime',      label: 'Anime',       q: 'anime scenery -girl', wh: '010' },
+  { id: 'cyberpunk',  label: 'Cyberpunk',   q: 'cyberpunk neon',      wh: '110' },
+  { id: 'space',      label: 'Space',       q: 'space',               wh: '100' },
+  { id: 'nature',     label: 'Nature',      q: 'nature',              wh: '100' },
+  { id: 'ocean',      label: 'Ocean',       q: 'ocean',               wh: '100' },
+  { id: 'amoled',     label: 'AMOLED Dark', q: 'amoled',              wh: '100' },
+  { id: 'abstract',   label: 'Abstract',    q: 'abstract',            wh: '100' },
+  { id: 'geometric',  label: 'Geometric',   q: 'geometric',           wh: '100' },
+  { id: 'lofi',       label: 'Lo-Fi',       q: 'lofi',                wh: '110' },
+  { id: 'aurora',     label: 'Aurora',      q: 'aurora',              wh: '100' },
+  { id: 'retrowave',  label: 'Retrowave',   q: 'retrowave',           wh: '100' },
+  { id: 'sakura',     label: 'Sakura',      q: 'sakura',              wh: '110' },
+  { id: 'neon',       label: 'Neon',        q: 'neon',                wh: '100' },
+  { id: 'minimal',    label: 'Minimal',     q: 'minimalism',          wh: '100' },
+  { id: 'galaxy',     label: 'Galaxy',      q: 'galaxy',              wh: '100' },
 ];
 
 // ─── Transform & Filter ──────────────────────────────────────────────────────
@@ -56,7 +56,7 @@ function mapWallhavenItem(w) {
 }
 
 // ─── Build Wallhaven search URL ───────────────────────────────────────────────
-function buildSearchUrl({ q = '', categories = '110', page = 1, sorting = 'relevance', topRange = '1M' }) {
+function buildSearchUrl({ q = '', categories = '100', page = 1, sorting = 'relevance', topRange = '1M' }) {
   const params = new URLSearchParams({
     categories,
     purity: '100',      
@@ -89,6 +89,7 @@ export default async function handler(req, res) {
     // 1. Search
     if (type === 'search') {
       if (!q.trim()) return res.status(400).json({ error: 'q param required for search' });
+      // Keep search at 110 so if a user explicitly searches for anime, it still works
       const url = buildSearchUrl({ q: q.trim(), categories: '110', page: pageNum, sorting: 'relevance' });
       const data = await fetchWallhaven(url);
       return res.json({ wallpapers: data.data.filter(isPortrait).map(mapWallhavenItem), meta: data.meta });
@@ -96,14 +97,16 @@ export default async function handler(req, res) {
 
     // 2. Trending
     if (type === 'trending') {
-      const url = buildSearchUrl({ categories: '110', page: pageNum, sorting: 'toplist', topRange: '1w' });
+      // FIX: Changed categories to '100' (General ONLY) to block anime entirely from trending
+      const url = buildSearchUrl({ categories: '100', page: pageNum, sorting: 'toplist', topRange: '1w' });
       const data = await fetchWallhaven(url);
       return res.json({ wallpapers: data.data.filter(isPortrait).map(mapWallhavenItem), meta: data.meta });
     }
 
     // 3. Explore
     if (type === 'explore') {
-      const url = buildSearchUrl({ categories: '110', page: pageNum, sorting: 'toplist', topRange: '1y' });
+      // FIX: Changed categories to '100' (General ONLY) to keep the home feed clean
+      const url = buildSearchUrl({ categories: '100', page: pageNum, sorting: 'toplist', topRange: '1y' });
       const data = await fetchWallhaven(url);
       
       let wallpapers = data.data.filter(isPortrait).map(mapWallhavenItem);
@@ -118,7 +121,6 @@ export default async function handler(req, res) {
     // 4. Single Category
     if (type === 'category') {
       const cat = CATEGORIES.find(c => c.id === category) || CATEGORIES[0];
-      // FIX: Changed sorting to 'toplist' with '1y' range to ensure thousands of paginatable results
       const url = buildSearchUrl({ q: cat.q, categories: cat.wh, page: pageNum, sorting: 'toplist', topRange: '1y' });
       const data = await fetchWallhaven(url);
       return res.json({ wallpapers: data.data.filter(isPortrait).map(mapWallhavenItem), meta: data.meta });
