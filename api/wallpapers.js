@@ -8,27 +8,27 @@ const WALLHAVEN_BASE = 'https://wallhaven.cc/api/v1';
 const API_KEY = process.env.WALLHAVEN_API_KEY || ''; // set in Vercel dashboard
 
 // ─── Category map ────────────────────────────────────────────────────────────
+// FIX: Simplified the queries (q) so they return thousands of paginatable results
 const CATEGORIES = [
-  { id: 'anime',      label: 'Anime',       q: 'anime landscape scenery',    wh: '010' },
-  { id: 'cyberpunk',  label: 'Cyberpunk',   q: 'cyberpunk neon city night',  wh: '110' },
-  { id: 'space',      label: 'Space',       q: 'space galaxy nebula cosmos', wh: '100' },
-  { id: 'nature',     label: 'Nature',      q: 'nature forest mountains',    wh: '100' },
-  { id: 'ocean',      label: 'Ocean',       q: 'ocean sea waves aerial',     wh: '100' },
-  { id: 'amoled',     label: 'AMOLED Dark', q: 'dark black minimal amoled',  wh: '100' },
-  { id: 'abstract',   label: 'Abstract',    q: 'abstract art fluid colorful',wh: '100' },
-  { id: 'geometric',  label: 'Geometric',   q: 'geometric pattern vector',   wh: '100' },
-  { id: 'lofi',       label: 'Lo-Fi',       q: 'lofi cozy aesthetic room',   wh: '110' },
-  { id: 'aurora',     label: 'Aurora',      q: 'aurora borealis northern lights', wh: '100' },
-  { id: 'retrowave',  label: 'Retrowave',   q: 'synthwave retrowave 80s sunset',  wh: '100' },
-  { id: 'sakura',     label: 'Sakura',      q: 'cherry blossom sakura japan',wh: '110' },
-  { id: 'neon',       label: 'Neon',        q: 'neon lights glow color',     wh: '100' },
-  { id: 'minimal',    label: 'Minimal',     q: 'minimalist simple clean',    wh: '100' },
-  { id: 'galaxy',     label: 'Galaxy',      q: 'milky way galaxy stars',     wh: '100' },
+  { id: 'anime',      label: 'Anime',       q: 'anime',            wh: '010' },
+  { id: 'cyberpunk',  label: 'Cyberpunk',   q: 'cyberpunk neon',   wh: '110' },
+  { id: 'space',      label: 'Space',       q: 'space',            wh: '100' },
+  { id: 'nature',     label: 'Nature',      q: 'nature',           wh: '100' },
+  { id: 'ocean',      label: 'Ocean',       q: 'ocean',            wh: '100' },
+  { id: 'amoled',     label: 'AMOLED Dark', q: 'amoled',           wh: '100' },
+  { id: 'abstract',   label: 'Abstract',    q: 'abstract',         wh: '100' },
+  { id: 'geometric',  label: 'Geometric',   q: 'geometric',        wh: '100' },
+  { id: 'lofi',       label: 'Lo-Fi',       q: 'lofi',             wh: '110' },
+  { id: 'aurora',     label: 'Aurora',      q: 'aurora',           wh: '100' },
+  { id: 'retrowave',  label: 'Retrowave',   q: 'retrowave',        wh: '100' },
+  { id: 'sakura',     label: 'Sakura',      q: 'sakura',           wh: '110' },
+  { id: 'neon',       label: 'Neon',        q: 'neon',             wh: '100' },
+  { id: 'minimal',    label: 'Minimal',     q: 'minimalism',       wh: '100' },
+  { id: 'galaxy',     label: 'Galaxy',      q: 'galaxy',           wh: '100' },
 ];
 
 // ─── Transform & Filter ──────────────────────────────────────────────────────
 function isPortrait(w) {
-  // Drop anything that isn't strictly taller than it is wide
   return w.dimension_y > w.dimension_x; 
 }
 
@@ -38,7 +38,7 @@ function mapWallhavenItem(w) {
 
   return {
     id: w.id,
-    url: w.thumbs.original,        // Medium-res image, proper proportions
+    url: w.thumbs.original,        
     fullUrl: w.path,               
     previewUrl: w.thumbs.original, 
     title: w.tags?.length > 0
@@ -96,23 +96,18 @@ export default async function handler(req, res) {
 
     // 2. Trending
     if (type === 'trending') {
-      // 1w (one week) ensures trending feels fresh
       const url = buildSearchUrl({ categories: '110', page: pageNum, sorting: 'toplist', topRange: '1w' });
       const data = await fetchWallhaven(url);
       return res.json({ wallpapers: data.data.filter(isPortrait).map(mapWallhavenItem), meta: data.meta });
     }
 
-    // 3. Explore (Fixed)
+    // 3. Explore
     if (type === 'explore') {
-      // FIX: 1 API call instead of 3. We pull from the '1y' (1 year) toplist so it's a huge, 
-      // paginatable pool of high-quality wallpapers that won't trip rate limits.
       const url = buildSearchUrl({ categories: '110', page: pageNum, sorting: 'toplist', topRange: '1y' });
       const data = await fetchWallhaven(url);
       
       let wallpapers = data.data.filter(isPortrait).map(mapWallhavenItem);
       
-      // Shuffle the results slightly so the grid feels organic and random,
-      // but because we are fetching sequential pages from Wallhaven, we won't get duplicates.
       for (let i = wallpapers.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [wallpapers[i], wallpapers[j]] = [wallpapers[j], wallpapers[i]];
@@ -123,7 +118,8 @@ export default async function handler(req, res) {
     // 4. Single Category
     if (type === 'category') {
       const cat = CATEGORIES.find(c => c.id === category) || CATEGORIES[0];
-      const url = buildSearchUrl({ q: cat.q, categories: cat.wh, page: pageNum, sorting: 'favorites' });
+      // FIX: Changed sorting to 'toplist' with '1y' range to ensure thousands of paginatable results
+      const url = buildSearchUrl({ q: cat.q, categories: cat.wh, page: pageNum, sorting: 'toplist', topRange: '1y' });
       const data = await fetchWallhaven(url);
       return res.json({ wallpapers: data.data.filter(isPortrait).map(mapWallhavenItem), meta: data.meta });
     }
