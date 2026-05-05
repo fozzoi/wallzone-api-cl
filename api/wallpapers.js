@@ -2,20 +2,12 @@
 /**
  * WallZone – Vercel Serverless API
  * Proxies Wallhaven.cc so your API key stays server-side.
- *
- * Endpoints (all GET /api/wallpapers):
- *   ?type=search&q=anime&page=1
- *   ?type=trending&page=1
- *   ?type=category&category=anime&page=1
- *   ?type=categories            (fetch one cover per category)
  */
 
 const WALLHAVEN_BASE = 'https://wallhaven.cc/api/v1';
 const API_KEY = process.env.WALLHAVEN_API_KEY || ''; // set in Vercel dashboard
 
 // ─── Category map ────────────────────────────────────────────────────────────
-// categories: 3-digit bitmask  100=general  010=anime  001=people
-// We only ever show SFW (purity=100)
 const CATEGORIES = [
   { id: 'anime',      label: 'Anime',       q: 'anime landscape scenery',    wh: '010' },
   { id: 'cyberpunk',  label: 'Cyberpunk',   q: 'cyberpunk neon city night',  wh: '110' },
@@ -34,19 +26,21 @@ const CATEGORIES = [
   { id: 'galaxy',     label: 'Galaxy',      q: 'milky way galaxy stars',     wh: '100' },
 ];
 
-// ─── Transform Wallhaven item → app item ─────────────────────────────────────
+// ─── Transform & Filter ──────────────────────────────────────────────────────
+function isPortrait(w) {
+  // Drop anything that isn't strictly taller than it is wide
+  return w.dimension_y > w.dimension_x; 
+}
+
 function mapWallhavenItem(w) {
   const aspectRatio = w.dimension_y / Math.max(w.dimension_x, 1);
   const cardHeight = Math.min(Math.max(Math.floor(aspectRatio * 180), 200), 380);
 
   return {
     id: w.id,
-    // FIX: Replaced w.thumbs.large with w.thumbs.original
-    // This provides a high-quality preview that maintains the aspect ratio, 
-    // eliminating the zoomed-in/blurry look without freezing the app with 4k files.
-    url: w.thumbs.original,        
-    fullUrl: w.path,               // full resolution for detail/download
-    previewUrl: w.thumbs.original, // medium preview
+    url: w.thumbs.original,        // Medium-res image, proper proportions
+    fullUrl: w.path,               
+    previewUrl: w.thumbs.original, 
     title: w.tags?.length > 0
       ? w.tags.slice(0, 3).map(t => t.name).join(', ')
       : 'Wallpaper',
@@ -65,10 +59,10 @@ function mapWallhavenItem(w) {
 function buildSearchUrl({ q = '', categories = '110', page = 1, sorting = 'relevance', topRange = '1M' }) {
   const params = new URLSearchParams({
     categories,
-    purity: '100',      // SFW only
+    purity: '100',      
     sorting,
     order: 'desc',
-    ratios: 'portrait', // mobile/portrait wallpapers only
+    ratios: 'portrait', 
     page: String(page),
   });
 
@@ -81,7 +75,6 @@ function buildSearchUrl({ q = '', categories = '110', page = 1, sorting = 'relev
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 export default async function handler(req, res) {
-  // CORS – allow any origin (React Native doesn't need this but good practice)
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=300');
@@ -93,61 +86,60 @@ export default async function handler(req, res) {
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
 
   try {
-    // ── 1. Search ─────────────────────────────────────────────────────────────
+    // 1. Search
     if (type === 'search') {
-      if (!q.trim()) {
-        return res.status(400).json({ error: 'q param required for search' });
-      }
+      if (!q.trim()) return res.status(400).json({ error: 'q param required for search' });
       const url = buildSearchUrl({ q: q.trim(), categories: '110', page: pageNum, sorting: 'relevance' });
       const data = await fetchWallhaven(url);
-      return res.json({ wallpapers: data.data.map(mapWallhavenItem), meta: data.meta });
+      return res.json({ wallpapers: data.data.filter(isPortrait).map(mapWallhavenItem), meta: data.meta });
     }
 
-    // ── 2. Trending / Explore mix ─────────────────────────────────────────────
+    // 2. Trending
     if (type === 'trending') {
-      const url = buildSearchUrl({ categories: '110', page: pageNum, sorting: 'toplist', topRange: '1M' });
+      // 1w (one week) ensures trending feels fresh
+      const url = buildSearchUrl({ categories: '110', page: pageNum, sorting: 'toplist', topRange: '1w' });
       const data = await fetchWallhaven(url);
-      return res.json({ wallpapers: data.data.map(mapWallhavenItem), meta: data.meta });
+      return res.json({ wallpapers: data.data.filter(isPortrait).map(mapWallhavenItem), meta: data.meta });
     }
 
-    // ── 3. Explore random mix (home grid) ─────────────────────────────────────
+    // 3. Explore (Fixed)
     if (type === 'explore') {
-      // Pick 3 random categories and merge results for variety
-      const shuffled = [...CATEGORIES].sort(() => Math.random() - 0.5).slice(0, 3);
-      const promises = shuffled.map(cat =>
-        fetchWallhaven(buildSearchUrl({ q: cat.q, categories: cat.wh, page: pageNum, sorting: pageNum === 1 ? 'favorites' : 'date_added' }))
-      );
-      const results = await Promise.all(promises);
-      const all = results.flatMap(r => (r.data || []).map(mapWallhavenItem));
-      // Fisher-Yates shuffle
-      for (let i = all.length - 1; i > 0; i--) {
+      // FIX: 1 API call instead of 3. We pull from the '1y' (1 year) toplist so it's a huge, 
+      // paginatable pool of high-quality wallpapers that won't trip rate limits.
+      const url = buildSearchUrl({ categories: '110', page: pageNum, sorting: 'toplist', topRange: '1y' });
+      const data = await fetchWallhaven(url);
+      
+      let wallpapers = data.data.filter(isPortrait).map(mapWallhavenItem);
+      
+      // Shuffle the results slightly so the grid feels organic and random,
+      // but because we are fetching sequential pages from Wallhaven, we won't get duplicates.
+      for (let i = wallpapers.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [all[i], all[j]] = [all[j], all[i]];
+        [wallpapers[i], wallpapers[j]] = [wallpapers[j], wallpapers[i]];
       }
-      return res.json({ wallpapers: all });
+      return res.json({ wallpapers, meta: data.meta });
     }
 
-    // ── 4. Single category ────────────────────────────────────────────────────
+    // 4. Single Category
     if (type === 'category') {
       const cat = CATEGORIES.find(c => c.id === category) || CATEGORIES[0];
       const url = buildSearchUrl({ q: cat.q, categories: cat.wh, page: pageNum, sorting: 'favorites' });
       const data = await fetchWallhaven(url);
-      return res.json({ wallpapers: data.data.map(mapWallhavenItem), meta: data.meta });
+      return res.json({ wallpapers: data.data.filter(isPortrait).map(mapWallhavenItem), meta: data.meta });
     }
 
-    // ── 5. All categories list (with cover image) ─────────────────────────────
+    // 5. Category Covers
     if (type === 'categories') {
-      // Fetch one cover per category in parallel
       const covers = await Promise.all(
         CATEGORIES.map(async cat => {
           try {
             const url = buildSearchUrl({ q: cat.q, categories: cat.wh, page: 1, sorting: 'favorites' });
             const data = await fetchWallhaven(url);
-            const first = data.data?.[0];
+            const portraitImages = data.data?.filter(isPortrait) || [];
             return {
               id: cat.id,
               label: cat.label,
-              cover: first?.thumbs?.large || '',
+              cover: portraitImages[0]?.thumbs?.original || '',
               query: cat.q,
             };
           } catch {
