@@ -244,15 +244,16 @@ export default async function handler(req, res) {
       return res.json({ wallpapers, meta: data.meta });
     }
 
-    // 4. Single Category
+    // 4. Single Category — toplist on p1 for quality, date_added for p2+ for deep pagination
     if (type === 'category') {
       const cat = CATEGORIES.find(c => c.id === category) || CATEGORIES[0];
       const isAnimeCat = ['anime', 'sakura', 'lofi'].includes(cat.id);
+      const isFirstPage = pageNum === 1;
       const url = buildSearchUrl({
         q: cat.q,
         categories: cat.wh,
         page: pageNum,
-        sorting: 'toplist',
+        sorting: isFirstPage ? 'toplist' : 'date_added',
         topRange: '1y',
       });
       const data = await fetchWallhaven(url);
