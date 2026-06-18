@@ -46,9 +46,10 @@ function isPortrait(w) {
   return w.dimension_y > w.dimension_x;
 }
 
-// At least 2K width (dimension_x = width for portrait images)
+// Minimum 1440px wide = QHD+ portrait ("2K" on mobile, e.g. Samsung 1440x3200, Pixel 1440x3120)
+// This is the highest common phone screen width — guarantees sharp wallpapers on all phones.
 function is2K(w) {
-  return w.dimension_x >= 2000;
+  return w.dimension_x >= 1440;
 }
 
 function isAiArt(w) {
@@ -125,7 +126,7 @@ function buildSearchUrl({ q = '', categories = '100', page = 1, sorting = 'relev
     sorting,
     order:           'desc',
     ratios:          'portrait',
-    atleast:         '2000x3500', // minimum 2K width for portrait (filters sub-2K server-side)
+    atleast:         '1440x3120', // QHD+ portrait = "2K mobile" (1440x3200 on Samsung/Pixel)
     ai_art_filter:   '1',         // exclude AI-generated wallpapers at the Wallhaven level
     page:            String(page),
   });
