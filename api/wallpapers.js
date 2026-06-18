@@ -9,55 +9,46 @@ const API_KEY = process.env.WALLHAVEN_API_KEY || '';
 
 // ─── Category map ────────────────────────────────────────────────────────────
 const CATEGORIES = [
-  { id: 'nature',      label: 'Nature',       q: 'nature landscape forest',   wh: '100' },
-  { id: 'space',       label: 'Space',        q: 'space galaxy nebula',       wh: '100' },
-  { id: 'ocean',       label: 'Ocean',        q: 'ocean waves sea',           wh: '100' },
-  { id: 'city',        label: 'City',         q: 'cityscape urban night',     wh: '100' },
-  { id: 'mountain',    label: 'Mountain',     q: 'mountain landscape peak',   wh: '100' },
-  { id: 'cyberpunk',   label: 'Cyberpunk',    q: 'cyberpunk neon city',       wh: '110' },
-  { id: 'abstract',    label: 'Abstract',     q: 'abstract art fluid',        wh: '100' },
-  { id: 'geometric',   label: 'Geometric',    q: 'geometric pattern',         wh: '100' },
-  { id: 'amoled',      label: 'AMOLED Dark',  q: 'amoled dark black',         wh: '100' },
-  { id: 'aurora',      label: 'Aurora',       q: 'aurora borealis',           wh: '100' },
-  { id: 'retrowave',   label: 'Retrowave',    q: 'synthwave retrowave',       wh: '100' },
-  { id: 'neon',        label: 'Neon',         q: 'neon lights',               wh: '100' },
-  { id: 'minimal',     label: 'Minimal',      q: 'minimalism clean',          wh: '100' },
-  { id: 'galaxy',      label: 'Galaxy',       q: 'milky way stars',           wh: '100' },
-  { id: 'wildlife',    label: 'Wildlife',     q: 'wildlife animals',          wh: '100' },
-  { id: 'architecture',label: 'Architecture', q: 'architecture building',     wh: '100' },
-  // Anime kept as opt-in category only — never mixed into home/trending feeds
-  { id: 'anime',       label: 'Anime',        q: 'anime scenery landscape -1girl -2girls -solo', wh: '010' },
-  { id: 'sakura',      label: 'Sakura',       q: 'cherry blossom sakura -1girl', wh: '110' },
-  { id: 'lofi',        label: 'Lo-Fi',        q: 'lofi room aesthetic -1girl',   wh: '110' },
+  { id: 'nature',       label: 'Nature',        q: 'nature landscape',              wh: '100', cover: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=800&q=75' },
+  { id: 'space',        label: 'Space',         q: 'space galaxy',                  wh: '100', cover: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=800&q=75' },
+  { id: 'ocean',        label: 'Ocean',         q: 'ocean waves',                   wh: '100', cover: 'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=800&q=75' },
+  { id: 'city',         label: 'City',          q: 'cityscape night',               wh: '100', cover: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=800&q=75' },
+  { id: 'mountain',     label: 'Mountain',      q: 'mountain landscape',            wh: '100', cover: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=75' },
+  { id: 'cyberpunk',    label: 'Cyberpunk',     q: 'cyberpunk neon',                wh: '110', cover: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?auto=format&fit=crop&w=800&q=75' },
+  { id: 'abstract',     label: 'Abstract',      q: 'abstract art',                  wh: '100', cover: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=75' },
+  { id: 'geometric',    label: 'Geometric',     q: 'geometric pattern',             wh: '100', cover: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=75' },
+  { id: 'amoled',       label: 'AMOLED Dark',   q: 'amoled dark',                   wh: '100', cover: 'https://images.unsplash.com/photo-1550684845-f7c5c5c5c5c5?auto=format&fit=crop&w=800&q=75' },
+  { id: 'aurora',       label: 'Aurora',        q: 'aurora borealis',               wh: '100', cover: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&w=800&q=75' },
+  { id: 'retrowave',    label: 'Retrowave',     q: 'synthwave retrowave',           wh: '100', cover: 'https://images.unsplash.com/photo-1614851099175-e5b30eb6f696?auto=format&fit=crop&w=800&q=75' },
+  { id: 'neon',         label: 'Neon',          q: 'neon lights',                   wh: '100', cover: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=800&q=75' },
+  { id: 'minimal',      label: 'Minimal',       q: 'minimalism',                    wh: '100', cover: 'https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=800&q=75' },
+  { id: 'galaxy',       label: 'Galaxy',        q: 'milky way stars',               wh: '100', cover: 'https://images.unsplash.com/photo-1543722530-d2c3201371e7?auto=format&fit=crop&w=800&q=75' },
+  { id: 'wildlife',     label: 'Wildlife',      q: 'wildlife animals',              wh: '100', cover: 'https://images.unsplash.com/photo-1437622368342-7a3d73a640fe?auto=format&fit=crop&w=800&q=75' },
+  { id: 'architecture', label: 'Architecture', q: 'architecture building',         wh: '100', cover: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?auto=format&fit=crop&w=800&q=75' },
+  { id: 'anime',        label: 'Anime',         q: 'anime scenery -1girl -2girls',  wh: '010', cover: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=800&q=75' },
+  { id: 'sakura',       label: 'Sakura',        q: 'cherry blossom sakura',        wh: '110', cover: 'https://images.unsplash.com/photo-1493514789931-586cb221d7a7?auto=format&fit=crop&w=800&q=75' },
+  { id: 'lofi',         label: 'Lo-Fi',         q: 'lofi aesthetic room',           wh: '110', cover: 'https://images.unsplash.com/photo-1511367461429-c7d9b294b6b6?auto=format&fit=crop&w=800&q=75' },
 ];
 
-// Categories used for the mixed home explore feed (no anime)
-const EXPLORE_CATEGORIES = CATEGORIES.filter(
-  c => !['anime', 'sakura', 'lofi'].includes(c.id)
-);
-
-// Tags that indicate anime character bloat — filtered from all non-anime feeds
-const BLOCKED_TAGS = new Set([
-  '1girl', '2girls', '3girls', 'solo', 'multiple_girls',
-  'anime_girl', 'female', 'girl', 'character',
-]);
-
-const ANIME_EXCLUSION_QUERY = '-1girl -2girls -3girls -solo -anime_girl';
+// Only block obvious anime-character tags (not generic words like "female")
+const ANIME_CHARACTER_TAGS = new Set(['1girl', '2girls', '3girls', 'multiple_girls', 'anime_girl']);
+const ANIME_EXCLUSION_QUERY = '-1girl -2girls -3girls';
 
 // ─── Transform & Filter ──────────────────────────────────────────────────────
 function isPortrait(w) {
   return w.dimension_y > w.dimension_x;
 }
 
-function hasBlockedTags(w) {
+function isAnimeCharacter(w) {
   const tags = (w.tags || []).map(t => (t.name || '').toLowerCase());
-  return tags.some(t => BLOCKED_TAGS.has(t));
+  return tags.some(t => ANIME_CHARACTER_TAGS.has(t));
 }
 
 function filterWallpapers(items, { allowAnime = false } = {}) {
   return (items || []).filter(w => {
     if (!isPortrait(w)) return false;
-    if (!allowAnime && (w.category === 'anime' || hasBlockedTags(w))) return false;
+    if (!allowAnime && w.category === 'anime') return false;
+    if (!allowAnime && isAnimeCharacter(w)) return false;
     return true;
   });
 }
@@ -94,27 +85,6 @@ function shuffle(arr) {
   return a;
 }
 
-function interleave(buckets) {
-  const result = [];
-  const max = Math.max(...buckets.map(b => b.length), 0);
-  for (let i = 0; i < max; i++) {
-    for (const bucket of buckets) {
-      if (bucket[i]) result.push(bucket[i]);
-    }
-  }
-  return result;
-}
-
-function pickExploreCategories(pageNum, count = 5) {
-  const pool = [...EXPLORE_CATEGORIES];
-  const offset = ((pageNum - 1) * count) % pool.length;
-  const picked = [];
-  for (let i = 0; i < count; i++) {
-    picked.push(pool[(offset + i) % pool.length]);
-  }
-  return picked;
-}
-
 // ─── Build Wallhaven search URL ───────────────────────────────────────────────
 function buildSearchUrl({ q = '', categories = '100', page = 1, sorting = 'relevance', topRange = '1M' }) {
   const params = new URLSearchParams({
@@ -141,34 +111,12 @@ async function fetchWallhaven(url) {
   return response.json();
 }
 
-async function fetchCategoryBatch(categories, pageNum) {
-  const results = await Promise.all(
-    categories.map(async cat => {
-      try {
-        const url = buildSearchUrl({
-          q: `${cat.q} ${ANIME_EXCLUSION_QUERY}`,
-          categories: cat.wh,
-          page: pageNum,
-          sorting: 'toplist',
-          topRange: '1M',
-        });
-        const data = await fetchWallhaven(url);
-        return filterWallpapers(data.data).map(mapWallhavenItem);
-      } catch {
-        return [];
-      }
-    })
-  );
-  return results;
-}
-
 // ─── Handler ──────────────────────────────────────────────────────────────────
 export default async function handler(req, res) {
   const isRefresh = req.query.refresh === '1';
 
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  // Short CDN cache; bypass when client requests fresh content
   res.setHeader(
     'Cache-Control',
     isRefresh ? 'no-store' : 's-maxage=60, stale-while-revalidate=120'
@@ -185,7 +133,7 @@ export default async function handler(req, res) {
     if (type === 'search') {
       if (!q.trim()) return res.status(400).json({ error: 'q param required for search' });
       const url = buildSearchUrl({
-        q: `${q.trim()} ${ANIME_EXCLUSION_QUERY}`,
+        q: q.trim(),
         categories: '110',
         page: pageNum,
         sorting: 'relevance',
@@ -197,31 +145,39 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2. Trending — rotate through diverse non-anime categories
+    // 2. Trending — single fast request, general category only
     if (type === 'trending') {
-      const trendingCats = pickExploreCategories(pageNum, 4);
-      const buckets = await fetchCategoryBatch(trendingCats, 1);
-      const wallpapers = shuffle(interleave(buckets)).slice(0, 24);
-      return res.json({ wallpapers, meta: { page: pageNum } });
+      const url = buildSearchUrl({
+        q: ANIME_EXCLUSION_QUERY,
+        categories: '100',
+        page: pageNum,
+        sorting: 'toplist',
+        topRange: '1w',
+      });
+      const data = await fetchWallhaven(url);
+      const wallpapers = filterWallpapers(data.data).map(mapWallhavenItem).slice(0, 12);
+      return res.json({ wallpapers, meta: data.meta });
     }
 
-    // 3. Explore — mixed feed from multiple categories for variety
+    // 3. Explore — single request, shuffled for variety
     if (type === 'explore') {
-      const exploreCats = pickExploreCategories(pageNum, 5);
-      const buckets = await fetchCategoryBatch(exploreCats, pageNum);
-      const seen = new Set();
-      const wallpapers = shuffle(interleave(buckets)).filter(w => {
-        if (seen.has(w.id)) return false;
-        seen.add(w.id);
-        return true;
+      const url = buildSearchUrl({
+        q: ANIME_EXCLUSION_QUERY,
+        categories: '100',
+        page: pageNum,
+        sorting: 'toplist',
+        topRange: '1M',
       });
-      return res.json({ wallpapers, meta: { page: pageNum } });
+      const data = await fetchWallhaven(url);
+      let wallpapers = filterWallpapers(data.data).map(mapWallhavenItem);
+      if (pageNum === 1) wallpapers = shuffle(wallpapers);
+      return res.json({ wallpapers, meta: data.meta });
     }
 
     // 4. Single Category
     if (type === 'category') {
       const cat = CATEGORIES.find(c => c.id === category) || CATEGORIES[0];
-      const isAnimeCat = cat.id === 'anime';
+      const isAnimeCat = ['anime', 'sakura', 'lofi'].includes(cat.id);
       const url = buildSearchUrl({
         q: cat.q,
         categories: cat.wh,
@@ -236,31 +192,14 @@ export default async function handler(req, res) {
       });
     }
 
-    // 5. Category Covers
+    // 5. Category list — static covers, no live Wallhaven calls (fast & reliable)
     if (type === 'categories') {
-      const covers = await Promise.all(
-        CATEGORIES.map(async cat => {
-          try {
-            const url = buildSearchUrl({
-              q: cat.q,
-              categories: cat.wh,
-              page: 1,
-              sorting: 'favorites',
-            });
-            const data = await fetchWallhaven(url);
-            const isAnimeCat = cat.id === 'anime';
-            const portraitImages = filterWallpapers(data.data, { allowAnime: isAnimeCat });
-            return {
-              id: cat.id,
-              label: cat.label,
-              cover: portraitImages[0]?.thumbs?.large || portraitImages[0]?.thumbs?.original || '',
-              query: cat.q,
-            };
-          } catch {
-            return { id: cat.id, label: cat.label, cover: '', query: cat.q };
-          }
-        })
-      );
+      const covers = CATEGORIES.map(cat => ({
+        id: cat.id,
+        label: cat.label,
+        cover: cat.cover,
+        query: cat.q,
+      }));
       return res.json({ categories: covers });
     }
 
