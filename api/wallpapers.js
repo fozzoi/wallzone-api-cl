@@ -10,26 +10,21 @@ const API_KEY = process.env.Access_Key || '';
 // ─── Category map ────────────────────────────────────────────────────────────
 // Mapping our categories to Unsplash topics or specific curated search queries
 const CATEGORIES = [
-  { id: 'nature',       label: 'Nature',        q: 'nature landscape wallpaper',    cover: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=800&q=75' },
-  { id: 'space',        label: 'Space',         q: 'space galaxy stars',            cover: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=800&q=75' },
-  { id: 'nasa',         label: 'NASA',          username: 'nasa',                   cover: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=800&q=75' },
-  { id: 'ocean',        label: 'Ocean',         q: 'ocean waves aerial',            cover: 'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=800&q=75' },
-  { id: 'city',         label: 'City',          q: 'cityscape night neon',          cover: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=800&q=75' },
-  { id: 'mountain',     label: 'Mountain',      q: 'mountain landscape aesthetic',  cover: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=75' },
-  { id: 'cyberpunk',    label: 'Cyberpunk',     q: 'cyberpunk neon city',           cover: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?auto=format&fit=crop&w=800&q=75' },
-  { id: 'abstract',     label: 'Abstract',      q: 'abstract 3d render',            cover: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=75' },
-  { id: 'geometric',    label: 'Geometric',     q: 'geometric pattern 3d',          cover: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=75' },
-  { id: 'amoled',       label: 'AMOLED Dark',   q: 'dark black minimal',            cover: 'https://images.unsplash.com/photo-1550684845-f7c5c5c5c5c5?auto=format&fit=crop&w=800&q=75' },
-  { id: 'aurora',       label: 'Aurora',        q: 'aurora borealis night',         cover: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&w=800&q=75' },
-  { id: 'retrowave',    label: 'Retrowave',     q: 'synthwave vaporwave',           cover: 'https://images.unsplash.com/photo-1614851099175-e5b30eb6f696?auto=format&fit=crop&w=800&q=75' },
-  { id: 'neon',         label: 'Neon',          q: 'neon lights signs',             cover: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=800&q=75' },
-  { id: 'minimal',      label: 'Minimal',       q: 'minimalist clean',              cover: 'https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=800&q=75' },
-  { id: 'galaxy',       label: 'Galaxy',        q: 'milky way stars night',         cover: 'https://images.unsplash.com/photo-1543722530-d2c3201371e7?auto=format&fit=crop&w=800&q=75' },
-  { id: 'wildlife',     label: 'Wildlife',      q: 'wildlife animal portrait',      cover: 'https://images.unsplash.com/photo-1437622368342-7a3d73a640fe?auto=format&fit=crop&w=800&q=75' },
-  { id: 'architecture', label: 'Architecture',  q: 'modern architecture building',  cover: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?auto=format&fit=crop&w=800&q=75' },
-  { id: 'anime',        label: 'Anime',         q: 'anime illustration aesthetic',  cover: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=800&q=75' },
-  { id: 'sakura',       label: 'Sakura',        q: 'cherry blossom japan',          cover: 'https://images.unsplash.com/photo-1493514789931-586cb221d7a7?auto=format&fit=crop&w=800&q=75' },
-  { id: 'lofi',         label: 'Lo-Fi',         q: 'lofi aesthetic anime room',     cover: 'https://images.unsplash.com/photo-1511367461429-c7d9b294b6b6?auto=format&fit=crop&w=800&q=75' },
+  { id: 'nature', label: 'Nature', q: 'nature landscape wallpaper', cover: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=800&q=75' },
+  { id: 'nasa', label: 'NASA', username: 'nasa', cover: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=800&q=75' },
+  { id: 'ocean', label: 'Ocean', q: 'ocean waves aerial wallpaper', cover: 'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=800&q=75' },
+  { id: 'city', label: 'City', q: 'cityscape night neon wallpaper ', cover: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=800&q=75' },
+  { id: 'mountain', label: 'Mountain', q: 'mountain landscape aesthetic wallpaper', cover: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=75' },
+  { id: 'cyberpunk', label: 'Cyberpunk', q: 'cyberpunk neon city wallpaper', cover: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?auto=format&fit=crop&w=800&q=75' },
+  { id: 'abstract', label: 'Abstract', q: 'abstract 3d render wallpaper', cover: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=75' },
+  { id: 'geometric', label: 'Geometric', q: 'geometric pattern 3d wallpaper', cover: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=75' },
+  { id: 'amoled', label: 'AMOLED Dark', q: 'dark black minimal wallpaper', cover: 'https://images.unsplash.com/photo-1550684845-f7c5c5c5c5c5?auto=format&fit=crop&w=800&q=75' },
+  { id: 'aurora', label: 'Aurora', q: 'aurora borealis night wallpaper', cover: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?auto=format&fit=crop&w=800&q=75' },
+  { id: 'retrowave', label: 'Retrowave', q: 'synthwave vaporwave wallpaper', cover: 'https://images.unsplash.com/photo-1614851099175-e5b30eb6f696?auto=format&fit=crop&w=800&q=75' },
+  { id: 'minimal', label: 'Minimal', q: 'minimalist clean wallpaper', cover: 'https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=800&q=75' },
+  { id: 'wildlife', label: 'Wildlife', q: 'wildlife animal portrait wallpaper', cover: 'https://images.unsplash.com/photo-1437622368342-7a3d73a640fe?auto=format&fit=crop&w=800&q=75' },
+  { id: 'architecture', label: 'Architecture', q: 'modern architecture pattern wallpaper', cover: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?auto=format&fit=crop&w=800&q=75' },
+  { id: 'anime', label: 'Anime', q: 'anime japan landscape wallpaper', cover: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=800&q=75' },
 ];
 
 // ─── Transform & Filter ──────────────────────────────────────────────────────
@@ -43,7 +38,7 @@ function mapUnsplashItem(u) {
 
   // Extract a sensible title from tags or alt description
   const tagNames = (u.tags || []).map(t => t.title).filter(Boolean);
-  const title = tagNames.length > 0 
+  const title = tagNames.length > 0
     ? tagNames[0].charAt(0).toUpperCase() + tagNames[0].slice(1)
     : (u.alt_description ? u.alt_description.split(' ')[0] : 'Wallpaper');
 
@@ -87,7 +82,7 @@ async function fetchUnsplash(endpoint, paramsObj = {}, retries = 2) {
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     const response = await fetch(url, {
-      headers: { 
+      headers: {
         'Authorization': `Client-ID ${API_KEY}`,
         'Accept-Version': 'v1'
       },
@@ -138,9 +133,9 @@ export default async function handler(req, res) {
   const cacheTTL =
     type === 'categories'
       ? 's-maxage=86400, stale-while-revalidate=604800'     // 1 day / 1 week (static)
-    : (type === 'explore' || type === 'trending')
-      ? 's-maxage=43200, stale-while-revalidate=86400'      // 12 hours / 24 hours
-    : 's-maxage=7200, stale-while-revalidate=14400';        // search/category: 2 hours / 4 hours
+      : (type === 'explore' || type === 'trending')
+        ? 's-maxage=43200, stale-while-revalidate=86400'      // 12 hours / 24 hours
+        : 's-maxage=7200, stale-while-revalidate=14400';        // search/category: 2 hours / 4 hours
   res.setHeader('Cache-Control', cacheTTL);
 
   try {
