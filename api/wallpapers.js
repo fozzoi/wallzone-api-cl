@@ -34,9 +34,29 @@ const CATEGORIES = [
 const ANIME_CHARACTER_TAGS = new Set(['1girl', '2girls', '3girls', 'multiple_girls', 'anime_girl']);
 const ANIME_EXCLUSION_QUERY = '-1girl -2girls -3girls';
 
+// Known AI-art generator tags from Wallhaven's tag system
+const AI_ART_TAGS = new Set([
+  'ai_art', 'ai generated', 'ai-generated', 'ai art',
+  'stable diffusion', 'stable_diffusion', 'midjourney',
+  'dall-e', 'dall_e', 'dreamshaper', 'novelai', 'niji journey',
+]);
+
 // ─── Transform & Filter ──────────────────────────────────────────────────────
 function isPortrait(w) {
   return w.dimension_y > w.dimension_x;
+}
+
+// At least 2K width (dimension_x = width for portrait images)
+function is2K(w) {
+  return w.dimension_x >= 2000;
+}
+
+function isAiArt(w) {
+  // Wallhaven adds an explicit ai field since their AI categorization update
+  if (w.ai_art_filter === true || w.ai === true) return true;
+  // Also catch via tags for any that slip through
+  const tags = (w.tags || []).map(t => (t.name || '').toLowerCase());
+  return tags.some(t => AI_ART_TAGS.has(t));
 }
 
 function isAnimeCharacter(w) {
@@ -46,9 +66,11 @@ function isAnimeCharacter(w) {
 
 function filterWallpapers(items, { allowAnime = false } = {}) {
   return (items || []).filter(w => {
-    if (!isPortrait(w)) return false;
-    if (!allowAnime && w.category === 'anime') return false;
-    if (!allowAnime && isAnimeCharacter(w)) return false;
+    if (!isPortrait(w))              return false; // portrait only
+    if (!is2K(w))                    return false; // minimum 2K width
+    if (isAiArt(w))                  return false; // no AI-generated art
+    if (!allowAnime && w.category === 'anime')  return false;
+    if (!allowAnime && isAnimeCharacter(w))     return false;
     return true;
   });
 }
@@ -99,11 +121,13 @@ function shuffle(arr) {
 function buildSearchUrl({ q = '', categories = '100', page = 1, sorting = 'relevance', topRange = '1M' }) {
   const params = new URLSearchParams({
     categories,
-    purity: '100',
+    purity:          '100',
     sorting,
-    order: 'desc',
-    ratios: 'portrait',
-    page: String(page),
+    order:           'desc',
+    ratios:          'portrait',
+    atleast:         '2000x3500', // minimum 2K width for portrait (filters sub-2K server-side)
+    ai_art_filter:   '1',         // exclude AI-generated wallpapers at the Wallhaven level
+    page:            String(page),
   });
 
   if (q) params.set('q', q);
