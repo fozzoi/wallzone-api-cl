@@ -135,27 +135,35 @@ async function fetchWallhaven(url, retries = 2) {
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 export default async function handler(req, res) {
-  const isRefresh = req.query.refresh === '1';
+  // ── Parse query params via WHATWG URL API (avoids DEP0169 url.parse warning) ─
+  // Vercel populates req.query via the deprecated url.parse(); we skip it entirely
+  // and parse req.url ourselves using the modern URL API.
+  const reqUrl = new URL(req.url, 'https://wallzone.vercel.app');
+  const sp = reqUrl.searchParams;
+
+  const type      = sp.get('type')     || 'explore';
+  const q         = sp.get('q')        || '';
+  const page      = sp.get('page')     || '1';
+  const category  = sp.get('category') || '';
+  const pageNum   = Math.max(1, parseInt(page, 10) || 1);
 
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
 
   // Long CDN cache — Vercel Edge serves repeat requests; Wallhaven only gets
   // called when the cache is cold. Prevents 429 rate-limit errors.
-  // Cache is keyed by full URL (type + page + q + category), so each unique
-  // request has its own TTL slot.
-  const { type = 'search' } = req.query;
+  // Cache key = full URL (type + page + q + category) → each unique request
+  // gets its own TTL slot on the Vercel edge network.
   const cacheTTL =
-    type === 'categories' ? 's-maxage=3600, stale-while-revalidate=86400'  // 1 hr / 1 day
-    : (type === 'explore' || type === 'trending') ? 's-maxage=300, stale-while-revalidate=600'   // 5 min / 10 min
-    : 's-maxage=120, stale-while-revalidate=300'; // search: 2 min / 5 min
+    type === 'categories'
+      ? 's-maxage=3600, stale-while-revalidate=86400'         // 1 hr / 1 day (static)
+    : (type === 'explore' || type === 'trending')
+      ? 's-maxage=300, stale-while-revalidate=600'            // 5 min / 10 min
+    : 's-maxage=120, stale-while-revalidate=300';             // search: 2 min / 5 min
   res.setHeader('Cache-Control', cacheTTL);
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
-
-  const { type = 'search', q = '', page = '1', category = '' } = req.query;
-  const pageNum = Math.max(1, parseInt(page, 10) || 1);
 
   try {
     // 1. Search
