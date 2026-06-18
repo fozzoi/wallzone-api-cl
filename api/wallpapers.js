@@ -12,6 +12,7 @@ const API_KEY = process.env.Access_Key || '';
 const CATEGORIES = [
   { id: 'nature',       label: 'Nature',        q: 'nature landscape wallpaper',    cover: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=800&q=75' },
   { id: 'space',        label: 'Space',         q: 'space galaxy stars',            cover: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=800&q=75' },
+  { id: 'nasa',         label: 'NASA',          username: 'nasa',                   cover: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=800&q=75' },
   { id: 'ocean',        label: 'Ocean',         q: 'ocean waves aerial',            cover: 'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=800&q=75' },
   { id: 'city',         label: 'City',          q: 'cityscape night neon',          cover: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=800&q=75' },
   { id: 'mountain',     label: 'Mountain',      q: 'mountain landscape aesthetic',  cover: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=75' },
@@ -187,16 +188,28 @@ export default async function handler(req, res) {
     // 4. Single Category
     if (type === 'category') {
       const cat = CATEGORIES.find(c => c.id === category) || CATEGORIES[0];
-      const data = await fetchUnsplash('/search/photos', {
-        query: cat.q,
-        page: pageNum,
-        per_page: 30,
-        orientation: 'portrait',
-        content_filter: 'high',
-        order_by: 'relevant',
-      });
-      const wallpapers = (data.results || []).filter(isPortrait).map(mapUnsplashItem);
-      return res.json({ wallpapers, meta: { total: data.total, total_pages: data.total_pages } });
+      if (cat.username) {
+        // Fetch from user profile instead of search query
+        const data = await fetchUnsplash(`/users/${cat.username}/photos`, {
+          page: pageNum,
+          per_page: 30,
+          orientation: 'portrait',
+        });
+        const wallpapers = (data || []).filter(isPortrait).map(mapUnsplashItem);
+        // Since user photos endpoint doesn't return pagination data in body, mock it
+        return res.json({ wallpapers, meta: { total: 100, total_pages: 5 } });
+      } else {
+        const data = await fetchUnsplash('/search/photos', {
+          query: cat.q,
+          page: pageNum,
+          per_page: 30,
+          orientation: 'portrait',
+          content_filter: 'high',
+          order_by: 'relevant',
+        });
+        const wallpapers = (data.results || []).filter(isPortrait).map(mapUnsplashItem);
+        return res.json({ wallpapers, meta: { total: data.total, total_pages: data.total_pages } });
+      }
     }
 
     // 5. Category list — static covers
@@ -205,7 +218,8 @@ export default async function handler(req, res) {
         id: cat.id,
         label: cat.label,
         cover: cat.cover,
-        query: cat.q,
+        query: cat.q || '',
+        username: cat.username || null,
       }));
       return res.json({ categories: covers });
     }
