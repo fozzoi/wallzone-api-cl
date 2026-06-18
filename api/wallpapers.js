@@ -113,12 +113,24 @@ function buildSearchUrl({ q = '', categories = '100', page = 1, sorting = 'relev
   return `${WALLHAVEN_BASE}/search?${params.toString()}`;
 }
 
-async function fetchWallhaven(url) {
-  const response = await fetch(url, {
-    headers: { 'User-Agent': 'WallZoneApp/1.0' },
-  });
-  if (!response.ok) throw new Error(`Wallhaven responded ${response.status}`);
-  return response.json();
+async function fetchWallhaven(url, retries = 2) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'WallZoneApp/1.0' },
+    });
+
+    if (response.status === 429) {
+      if (attempt < retries) {
+        // Exponential backoff: 1 s, then 2 s
+        await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+        continue;
+      }
+      throw new Error('Wallhaven responded 429 — rate limited. Try again later.');
+    }
+
+    if (!response.ok) throw new Error(`Wallhaven responded ${response.status}`);
+    return response.json();
+  }
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
@@ -127,10 +139,17 @@ export default async function handler(req, res) {
 
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader(
-    'Cache-Control',
-    isRefresh ? 'no-store' : 's-maxage=60, stale-while-revalidate=120'
-  );
+
+  // Long CDN cache — Vercel Edge serves repeat requests; Wallhaven only gets
+  // called when the cache is cold. Prevents 429 rate-limit errors.
+  // Cache is keyed by full URL (type + page + q + category), so each unique
+  // request has its own TTL slot.
+  const { type = 'search' } = req.query;
+  const cacheTTL =
+    type === 'categories' ? 's-maxage=3600, stale-while-revalidate=86400'  // 1 hr / 1 day
+    : (type === 'explore' || type === 'trending') ? 's-maxage=300, stale-while-revalidate=600'   // 5 min / 10 min
+    : 's-maxage=120, stale-while-revalidate=300'; // search: 2 min / 5 min
+  res.setHeader('Cache-Control', cacheTTL);
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
