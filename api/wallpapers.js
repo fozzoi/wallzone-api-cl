@@ -57,15 +57,22 @@ function mapWallhavenItem(w) {
   const aspectRatio = w.dimension_y / Math.max(w.dimension_x, 1);
   const cardHeight = Math.min(Math.max(Math.floor(aspectRatio * 180), 200), 380);
 
+  // Build a clean title: use the wallhaven file short ID + top tag, or fallback
+  const tagNames = (w.tags || []).map(t => t.name).filter(Boolean);
+  const title = tagNames.length > 0
+    ? tagNames.slice(0, 3).map(t => t.replace(/[_]/g, ' ')).join(', ')
+    : 'Wallpaper';
+
   return {
     id: w.id,
-    url: w.thumbs?.large || w.thumbs?.original || w.path,
+    url: w.thumbs?.original || w.thumbs?.large || w.path,
     fullUrl: w.path,
-    previewUrl: w.thumbs?.large || w.thumbs?.original || w.path,
-    title: w.tags?.length > 0
-      ? w.tags.slice(0, 3).map(t => t.name).join(', ')
-      : 'Wallpaper',
-    author: w.uploader?.username || 'WallZone',
+    // thumbs.original preserves portrait aspect ratio; thumbs.large is always a 300×200 landscape crop
+    previewUrl: w.thumbs?.original || w.thumbs?.large || w.path,
+    title,
+    tags: tagNames,           // full tag list for the detail page
+    author: w.uploader?.username || 'Wallhaven',
+    source: 'Wallhaven',      // explicit source label
     height: cardHeight,
     resolution: w.resolution || '',
     views: w.views || 0,
