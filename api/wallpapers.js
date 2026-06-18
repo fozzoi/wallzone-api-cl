@@ -65,14 +65,17 @@ function mapWallhavenItem(w) {
 
   return {
     id: w.id,
-    url: w.thumbs?.original || w.thumbs?.large || w.path,
+    // thumbs.large = 300px landscape crop (fast placeholder)
+    // w.path = full resolution (used as the actual displayed image in grid + detail)
+    url: w.thumbs?.large || w.path,
     fullUrl: w.path,
-    // thumbs.original preserves portrait aspect ratio; thumbs.large is always a 300×200 landscape crop
-    previewUrl: w.thumbs?.original || w.thumbs?.large || w.path,
+    // Use the full path as previewUrl so grid cards are crisp & portrait-correct.
+    // expo-image caches aggressively so this doesn't re-download on scroll.
+    previewUrl: w.path,
     title,
-    tags: tagNames,           // full tag list for the detail page
+    tags: tagNames,
     author: w.uploader?.username || 'Wallhaven',
-    source: 'Wallhaven',      // explicit source label
+    source: 'Wallhaven',
     height: cardHeight,
     resolution: w.resolution || '',
     views: w.views || 0,
@@ -166,18 +169,19 @@ export default async function handler(req, res) {
       return res.json({ wallpapers, meta: data.meta });
     }
 
-    // 3. Explore — single request, shuffled for variety
+    // 3. Explore — toplist on p1 for quality, date_added for p2+ to support deep pagination
     if (type === 'explore') {
+      const isFirstPage = pageNum === 1;
       const url = buildSearchUrl({
         q: ANIME_EXCLUSION_QUERY,
         categories: '100',
         page: pageNum,
-        sorting: 'toplist',
+        sorting: isFirstPage ? 'toplist' : 'date_added',
         topRange: '1M',
       });
       const data = await fetchWallhaven(url);
       let wallpapers = filterWallpapers(data.data).map(mapWallhavenItem);
-      if (pageNum === 1) wallpapers = shuffle(wallpapers);
+      if (isFirstPage) wallpapers = shuffle(wallpapers);
       return res.json({ wallpapers, meta: data.meta });
     }
 
