@@ -11,7 +11,7 @@ const API_KEY = process.env.Access_Key || '';
 // Mapping our categories to Unsplash topics or specific curated search queries
 const CATEGORIES = [
   { id: 'nature', label: 'Nature', q: 'nature landscape wallpaper', cover: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=800&q=75' },
-  { id: 'nasa', label: 'NASA', username: 'nasa', cover: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=800&q=75' },
+  { id: 'nasa', label: 'NASA', q: 'nasa space astronomy galaxy nebula wallpaper', cover: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=800&q=75' },
   { id: 'ocean', label: 'Ocean', q: 'ocean waves aerial wallpaper', cover: 'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=800&q=75' },
   { id: 'city', label: 'City', q: 'cityscape night neon wallpaper ', cover: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=800&q=75' },
   { id: 'mountain', label: 'Mountain', q: 'mountain landscape aesthetic wallpaper', cover: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=75' },
