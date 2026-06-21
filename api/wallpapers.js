@@ -32,6 +32,10 @@ function isPortrait(w) {
   return w.height > w.width;
 }
 
+function isLandscape(w) {
+  return w.width > w.height;
+}
+
 function mapUnsplashItem(u) {
   const aspectRatio = u.height / Math.max(u.width, 1);
   const cardHeight = Math.min(Math.max(Math.floor(aspectRatio * 180), 200), 380);
@@ -113,21 +117,25 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   // Parse query params
-  let type, q, page, category, pageNum;
+  let type, q, page, category, pageNum, orientation;
   try {
     const sp = new URL(req.url, 'https://wallzone.vercel.app').searchParams;
     type = sp.get('type') || 'explore';
     q = sp.get('q') || '';
     page = sp.get('page') || '1';
     category = sp.get('category') || '';
+    orientation = sp.get('orientation') || 'portrait';
   } catch {
     const rq = req.query || {};
     type = rq.type || 'explore';
     q = rq.q || '';
     page = rq.page || '1';
     category = rq.category || '';
+    orientation = rq.orientation || 'portrait';
   }
   pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const requestOrientation = orientation === 'landscape' ? 'landscape' : 'portrait';
+  const filterFn = requestOrientation === 'landscape' ? isLandscape : isPortrait;
 
   // AGGRESSIVE CACHING (1 hour to 12 hours) to protect Unsplash 50/hr dev limits
   const cacheTTL =
@@ -148,10 +156,10 @@ export default async function handler(req, res) {
         query: searchQuery,
         page: pageNum,
         per_page: 30,
-        orientation: 'portrait',
+        orientation: requestOrientation,
         content_filter: 'high',
       });
-      const wallpapers = (data.results || []).filter(isPortrait).map(mapUnsplashItem);
+      const wallpapers = (data.results || []).filter(filterFn).map(mapUnsplashItem);
       return res.json({ wallpapers, meta: { total: data.total, total_pages: data.total_pages } });
     }
 
@@ -161,8 +169,9 @@ export default async function handler(req, res) {
         page: pageNum,
         per_page: 12,
         order_by: 'popular',
+        orientation: requestOrientation,
       });
-      const wallpapers = (data || []).filter(isPortrait).map(mapUnsplashItem);
+      const wallpapers = (data || []).filter(filterFn).map(mapUnsplashItem);
       return res.json({ wallpapers, meta: {} });
     }
 
@@ -174,8 +183,9 @@ export default async function handler(req, res) {
         page: Math.ceil(pageNum / 2), // Adjust page to fetch sequentially from each topic
         per_page: 30,
         order_by: 'latest',
+        orientation: requestOrientation,
       });
-      let wallpapers = (data || []).filter(isPortrait).map(mapUnsplashItem);
+      let wallpapers = (data || []).filter(filterFn).map(mapUnsplashItem);
       if (pageNum === 1) wallpapers = shuffle(wallpapers);
       return res.json({ wallpapers, meta: {} });
     }
@@ -189,7 +199,7 @@ export default async function handler(req, res) {
           page: pageNum,
           per_page: 30,
         });
-        const wallpapers = (data || []).map(mapUnsplashItem);
+        const wallpapers = (data || []).filter(filterFn).map(mapUnsplashItem);
         // Since user photos endpoint doesn't return pagination data in body, mock it
         return res.json({ wallpapers, meta: { total: 100, total_pages: 5 } });
       } else {
@@ -197,11 +207,11 @@ export default async function handler(req, res) {
           query: cat.q,
           page: pageNum,
           per_page: 30,
-          orientation: 'portrait',
+          orientation: requestOrientation,
           content_filter: 'high',
           order_by: 'relevant',
         });
-        const wallpapers = (data.results || []).filter(isPortrait).map(mapUnsplashItem);
+        const wallpapers = (data.results || []).filter(filterFn).map(mapUnsplashItem);
         return res.json({ wallpapers, meta: { total: data.total, total_pages: data.total_pages } });
       }
     }
