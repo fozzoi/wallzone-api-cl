@@ -117,7 +117,7 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   // Parse query params
-  let type, q, page, category, pageNum, orientation;
+  let type, q, page, category, pageNum, orientation, id;
   try {
     const sp = new URL(req.url, 'https://wallzone.vercel.app').searchParams;
     type = sp.get('type') || 'explore';
@@ -125,6 +125,7 @@ export default async function handler(req, res) {
     page = sp.get('page') || '1';
     category = sp.get('category') || '';
     orientation = sp.get('orientation') || 'portrait';
+    id = sp.get('id') || '';
   } catch {
     const rq = req.query || {};
     type = rq.type || 'explore';
@@ -132,6 +133,7 @@ export default async function handler(req, res) {
     page = rq.page || '1';
     category = rq.category || '';
     orientation = rq.orientation || 'portrait';
+    id = rq.id || '';
   }
   pageNum = Math.max(1, parseInt(page, 10) || 1);
   const requestOrientation = orientation === 'landscape' ? 'landscape' : 'portrait';
@@ -226,6 +228,40 @@ export default async function handler(req, res) {
         username: cat.username || null,
       }));
       return res.json({ categories: covers });
+    }
+
+    // 6. Single Photo Detail by ID
+    if (type === 'detail') {
+      if (!id) return res.status(400).json({ error: 'id param required for detail' });
+      const data = await fetchUnsplash(`/photos/${id}`);
+      return res.json({
+        id: data.id,
+        url: data.urls.regular,
+        fullUrl: data.urls.full,
+        previewUrl: data.urls.regular,
+        title: data.description || data.alt_description || 'Wallpaper',
+        author: data.user?.name || 'Unsplash Photographer',
+        authorUsername: data.user?.username || '',
+        authorAvatar: data.user?.profile_image?.large || data.user?.profile_image?.medium || '',
+        source: 'Unsplash',
+        resolution: `${data.width}x${data.height}`,
+        width: data.width,
+        height: data.height,
+        views: data.views || 0,
+        downloads: data.downloads || 0,
+        likes: data.likes || 0,
+        tags: (data.tags || []).map(t => t.title).filter(Boolean),
+        location: data.location?.name || data.location?.title || null,
+        exif: {
+          make: data.exif?.make || 'Unknown',
+          model: data.exif?.model || 'Unknown',
+          aperture: data.exif?.aperture || 'Unknown',
+          focal_length: data.exif?.focal_length || 'Unknown',
+          exposure_time: data.exif?.exposure_time || 'Unknown',
+          iso: data.exif?.iso || 'Unknown'
+        },
+        download_location: data.links?.download_location || '',
+      });
     }
 
     return res.status(400).json({ error: `Unknown type: ${type}` });
